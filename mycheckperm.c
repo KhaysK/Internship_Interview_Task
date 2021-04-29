@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <pwd.h>
 #include <grp.h>
@@ -7,83 +6,101 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 
-char* userName;
-char* groupName;
-char* path;
-struct passwd *user;
-struct group *group;
-struct stat statbuf;
-
-void parseArguments(int argc, char **argv) {
-    int opt = 0;
-    while ((opt = getopt(argc, argv, "u:g:p:")) != -1) {
-        switch (opt) {
-            case 'u':
-                userName = optarg;
-                break;
-            case 'g':
-                groupName = optarg;
-                break;
-            case 'p':
-                path = optarg;
-                break;
-        }
-    }
-}
-void checkPermission(char *path) {
-
+void checkPermission(char *path, struct passwd *user, struct group *group) {
+    //Открытие и чтение переданного файла
     DIR *d;
     struct dirent *dir;
-    d = opendir(path);
-    int counter = 0;
+    if((d = opendir(path)) == NULL)
+        perror("line 17");
+
     while ((dir = readdir(d)) != NULL) {
-        stat(dir->d_name, &statbuf);
-        mode_t modes = statbuf.st_mode;
-        if (counter > -1) {
-            if((statbuf.st_uid == user->pw_uid) ? (modes & S_IWUSR) && ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP)
-            || (statbuf.st_gid == group->gr_gid)
-            ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)) || (modes & S_IWUSR)
-            : ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP) || (statbuf.st_gid == group->gr_gid)
-            ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH))){
-                if (S_ISDIR(modes)) {
-                    getcwd(path, FILENAME_MAX);
-                    strcat(path, dir->d_name);
-                    strcat(path, "/");
-                            //checkPermission(dir->d_name);
-                    printf("%s \n", path);
+        //Исключение директорий .. и .
+        if ( 0 != strcmp(dir->d_name, "..") && 0 != strcmp(dir->d_name, ".") ) {
+            // Сохранение пути
+            char currentPath[PATH_MAX];
+            for (int i = 0; i < PATH_MAX; ++i) {
+                currentPath[i] = 0;
+            }
+            strcat(currentPath, path);
+            strcat(currentPath, dir->d_name);
+
+            // Получение данных о файле
+            struct stat statbuf;
+            stat(currentPath, &statbuf);
+            mode_t modes = statbuf.st_mode;
+
+            // Проверка условия
+            if((statbuf.st_uid == user->pw_uid) ? (modes & S_IWUSR) && (((statbuf.st_gid == group->gr_gid)
+            && (modes & S_IWGRP)) || (statbuf.st_gid == group->gr_gid) ? ((modes & S_IWGRP) &&
+            (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)) || (modes& S_IWUSR) :
+            (((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP)) || ((statbuf.st_gid == group->gr_gid) ?
+            ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH))))
+            {
+                //Проверка на тип, директория или нет
+                if(S_ISDIR(modes)){
+                    strcat(currentPath , "/")
+                    checkPermission(currentPath);
+                    printf("d %s \n", currentPath);
                 }
-                else{
-                    getcwd(path, FILENAME_MAX);
-                    strcat(path, "/");
-                    strcat(path, dir->d_name);
-                    printf("%s sds\n", path);
-                }
+                else printf("f %s \n", currentPath);
             }
         }
-        counter++;
     }
     closedir(d);
 }
 
-int main(int argc, char **argv){
-    parseArguments(argc, argv);
+void parseArguments(int argc, char **argv, char **path, char **name, char  **group) {
+    //Обработка каждого аргумента
+    int opt = 0;
+    while ((opt = getopt(argc, argv, "u:g:p:")) != -1) {
+        switch (opt) {
+            case 'u':
+                *name = optarg;
+                break;
+            case 'g':
+                *group = optarg;
+                break;
+            case 'p':
+                *path = optarg;
+                break;
+        }
+    }
+}
 
+int main(int argc, char **argv){
+    //Инициализация переменных
+    char* userName;
+    char* groupName;
+    char* path;
+    struct passwd *user;
+    struct group *group;
+
+    //Парсит аргументы
+    parseArguments(argc, argv, &path, &userName, &groupName);
+
+    //Получение данных о пользователе и группе
     user = getpwnam(userName);
     group = getgrnam(groupName);
+
+    //Получение данных о файле
+    struct stat statbuf;
     stat(path, &statbuf);
     mode_t modes = statbuf.st_mode;
 
+    //Проверка условия или владелец или группа или все
     if((statbuf.st_uid == user->pw_uid) ? (modes & S_IWUSR) && ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP) || (statbuf.st_gid == group->gr_gid)
-        ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)) || (modes & S_IWUSR)
-        : ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP) || (statbuf.st_gid == group->gr_gid)
-        ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH))){
+    ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)) || (modes & S_IWUSR)
+    : ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP) || (statbuf.st_gid == group->gr_gid) ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)))
+    {
+            //Проверка на тип, директория или нет
             if(S_ISDIR(modes)){
-                checkPermission(path);
-                printf("%s \n", path);
+                checkPermission(path,user, group);
+                printf("d %s \n", path);
             }
-            else
-                printf("%s \n", path);
+            else printf("f %s \n", path);
     }
     exit(0);
 }
