@@ -36,7 +36,7 @@ void checkPermission(char *path, struct passwd *user, struct group *group) {
             int permission;
             if(statbuf.st_uid == user->pw_uid)
                 permission = (modes & S_IWUSR);
-            else if (statbuf.st_gid == group->gr_gid)
+            else if (statbuf.st_gid == group->gr_gid || statbuf.st_gid == user->pw_gid)
                 permission = (modes & S_IWGRP);
             else
                 permission = (modes & S_IWOTH);
@@ -98,7 +98,7 @@ int main(int argc, char **argv){
     //Проверка условия или владелец или группа или все
     if(statbuf.st_uid == user->pw_uid)
         permission = (modes & S_IWUSR);
-    else if (statbuf.st_gid == group->gr_gid)
+    else if (statbuf.st_gid == group->gr_gid || statbuf.st_gid == user->pw_gid)
         permission = (modes & S_IWGRP);
     else
         permission = (modes & S_IWOTH);
