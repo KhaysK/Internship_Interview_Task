@@ -33,16 +33,20 @@ void checkPermission(char *path, struct passwd *user, struct group *group) {
             mode_t modes = statbuf.st_mode;
 
             // Проверка условия
-            if((statbuf.st_uid == user->pw_uid) ? (modes & S_IWUSR) && (((statbuf.st_gid == group->gr_gid)
-            && (modes & S_IWGRP)) || (statbuf.st_gid == group->gr_gid) ? ((modes & S_IWGRP) &&
-            (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)) || (modes& S_IWUSR) :
-            (((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP)) || ((statbuf.st_gid == group->gr_gid) ?
-            ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH))))
+            int permission;
+            if(statbuf.st_uid == user->pw_uid)
+                permission = (modes & S_IWUSR);
+            else if (statbuf.st_gid == group->gr_gid)
+                permission = (modes & S_IWGRP);
+            else
+                permission = (modes & S_IWOTH);
+
+            if(permission)
             {
                 //Проверка на тип, директория или нет
                 if(S_ISDIR(modes)){
-                    strcat(currentPath , "/")
-                    checkPermission(currentPath);
+                    strcat(currentPath , "/");
+                    checkPermission(currentPath, user, group);
                     printf("d %s \n", currentPath);
                 }
                 else printf("f %s \n", currentPath);
@@ -77,6 +81,7 @@ int main(int argc, char **argv){
     char* path;
     struct passwd *user;
     struct group *group;
+    int permission;
 
     //Парсит аргументы
     parseArguments(argc, argv, &path, &userName, &groupName);
@@ -91,9 +96,14 @@ int main(int argc, char **argv){
     mode_t modes = statbuf.st_mode;
 
     //Проверка условия или владелец или группа или все
-    if((statbuf.st_uid == user->pw_uid) ? (modes & S_IWUSR) && ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP) || (statbuf.st_gid == group->gr_gid)
-    ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)) || (modes & S_IWUSR)
-    : ((statbuf.st_gid == group->gr_gid) && (modes & S_IWGRP) || (statbuf.st_gid == group->gr_gid) ? ((modes & S_IWGRP) && (modes & S_IWOTH)) || (modes & S_IWGRP) : (modes & S_IWOTH)))
+    if(statbuf.st_uid == user->pw_uid)
+        permission = (modes & S_IWUSR);
+    else if (statbuf.st_gid == group->gr_gid)
+        permission = (modes & S_IWGRP);
+    else
+        permission = (modes & S_IWOTH);
+
+    if(permission)
     {
             //Проверка на тип, директория или нет
             if(S_ISDIR(modes)){
