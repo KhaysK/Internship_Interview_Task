@@ -1,6 +1,3 @@
-
-
-# Khabib Khaysadykov
 # Internship selection | Utility
 
 <hr>
