@@ -1,25 +1,25 @@
 
 
-# Хайсадыков Хабиб
-# ОМП отбор на стажировку | утилита
+# Khabib Khaysadykov
+# Internship selection | Utility
 
 <hr>
-<h3>О утилите:</h3>
+<h3>About utility:</h3>
 <ol>
-<li>С помощью getpwnam(), getgrnam() и stat() получаю данные о пользователе, группе и файле.</li>
+<li>Using getpwnam(), getgrnam() and stat() I get data about user, group and file.</li>
 <br>
-<li>Сравниваю uid файла и uid пользователя (является ли пользователь владельцем) и с помощью флага S_IWUSR узнаю есть ли у владельца право на запись.</li>
+<li>I compare the uid of the file and the uid of the user (whether the user is the owner) and using the S_IWUSR flag I find out if the owner has write permission.</li>
 <br>
-<li>Сравниваю gid файла и gid группы (является ли группа групой файла) и с помощью S_IWGRP проверяю есть ли у нее доступ на запись.</li>
+<li>I compare the gid of the file and the gid of the group (whether the group is a group of the file) and using S_IWGRP I check if it has write access.</li>
 <br>
-<li>Проверяю есть ли доступ на запись у остальных пользователей с помощью флага S_IWOTH.</li>
+<li>I check if other users have write access using the S_IWOTH flag.</li>
 <br>
-<li>Если доступ к файлу имеется проверяю, с помощью POSIX макроса S_ISDIR, является ли файл дирикторией.</li>
-<ol> <li>Если да вызываю функцию checkPermission</li>
-     <li>Eсли нет вывожу путь к файлу.</li> </ol>
+<li>If access to the file is available, I check, using the POSIX macro S_ISDIR, whether the file is a directory.</li>
+<ol> <li>If yes, I call the checkPermission method</li>
+     <li>If not, I display the path to the file.</li> </ol>
 <br>
-<li> В фунцкии checkPermission с помощью opendir() и readdir() открываю и читаю файлы внутри папки, 
-и повторяю процедуру проверки для каждого файла в папке.</li>
+<li>In the checkPermission method, using opendir() and readdir(), I open and read files inside a folder,
+and repeat the verification procedure for each file in the folder.</li>
 <br>
 </ol>
 
